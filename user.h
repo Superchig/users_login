@@ -6,8 +6,8 @@
 // Represents a username-password combination
 struct User {
   byte ID[4]; // 4-byte ID that corresponds to one in an RFID card
-  String username;
-  String password;
+  char username[20];
+  char password[20];
 };
 
 // Compares if two 4-byte IDs are equal

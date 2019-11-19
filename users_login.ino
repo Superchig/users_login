@@ -32,10 +32,11 @@
 #include <MFRC522.h>
 
 #include "user.h"
+#include "keysender.h"
 
 #define SS_PIN 10
 #define RST_PIN 9
-#define NUM_USERS 30 // The number of different users
+#define NUM_USERS 2 // The number of different users
 
 MFRC522 rfid(SS_PIN, RST_PIN); // Instance of the class
 
@@ -44,6 +45,8 @@ MFRC522::MIFARE_Key key;
 // Init array that will store new NUID 
 byte nuidPICC[4];
 
+byte buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 User users[NUM_USERS] = {
     User{{32, 04, 120, 166}, "chrichang", "placeholder"},
     User{{0xCE, 0x3C, 0x4C, 0x79}, "torti", "pass"}
@@ -51,8 +54,6 @@ User users[NUM_USERS] = {
 
 void setup() {
   Serial.begin(9600);
-  Serial.print("users[0].username: ");
-  Serial.println(users[0].username);
   
   SPI.begin(); // Init SPI bus
   rfid.PCD_Init(); // Init MFRC522 
@@ -61,9 +62,13 @@ void setup() {
     key.keyByte[i] = 0xFF;
   }
 
-  Serial.println(F("This code scan the MIFARE Classsic NUID."));
-  Serial.print(F("Using the following key:"));
-  printHex(key.keyByte, MFRC522::MF_KEY_SIZE);
+//  Serial.println(F("This code scan the MIFARE Classsic NUID."));
+//  Serial.print(F("Using the following key:"));
+//  printHex(key.keyByte, MFRC522::MF_KEY_SIZE);
+
+  // initialize digital pin LED_BUILTIN as an output.
+  pinMode(LED_BUILTIN, OUTPUT);
+  delay(200);
 }
  
 void loop() {
@@ -76,23 +81,24 @@ void loop() {
   if ( ! rfid.PICC_ReadCardSerial())
     return;
 
-  Serial.print(F("PICC type: "));
   MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
-  Serial.println(rfid.PICC_GetTypeName(piccType));
 
   // Check is the PICC of Classic MIFARE type
   if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI &&  
     piccType != MFRC522::PICC_TYPE_MIFARE_1K &&
     piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
-    Serial.println(F("Your tag is not of type MIFARE Classic."));
+    // Serial.println(F("Your tag is not of type MIFARE Classic."));
     return;
   }
 
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);
   if (rfid.uid.uidByte[0] != nuidPICC[0] || 
     rfid.uid.uidByte[1] != nuidPICC[1] || 
     rfid.uid.uidByte[2] != nuidPICC[2] || 
     rfid.uid.uidByte[3] != nuidPICC[3] ) {
-    Serial.println(F("A new card has been detected."));
+    // Serial.println(F("A new card has been detected."));
 
     // Store NUID into nuidPICC array
     for (byte i = 0; i < 4; i++) {
@@ -101,24 +107,17 @@ void loop() {
 
     User *matching_user = find_user_by_id(users, NUM_USERS, nuidPICC);
     if (matching_user != nullptr) {
-      Serial.println(F("This card matches a known user!"));
-      Serial.print(F("\tUser: "));
-      Serial.println(matching_user->username);
-      Serial.print(F("\tPassword (probably not actual): "));
-      Serial.println(matching_user->password);
+      sendKeys(buf, matching_user->username);
+      const char* tab = "\t";
+      sendKeys(buf, tab);
+      sendKeys(buf, matching_user->password);
+      const char* enter = "\n";
+      sendKeys(buf, enter);
     } else {
-      Serial.println(F("This card does not match a known user."));
+      // Serial.println(F("This card does not match a known user."));
     }
-   
-    Serial.println(F("The NUID tag is:"));
-    Serial.print(F("In hex: "));
-    printHex(rfid.uid.uidByte, rfid.uid.size);
-    Serial.println();
-    Serial.print(F("In dec: "));
-    printDec(rfid.uid.uidByte, rfid.uid.size);
-    Serial.println();
   }
-  else Serial.println(F("Card read previously."));
+  // else Serial.println(F("Card read previously."));
 
   // Halt PICC
   rfid.PICC_HaltA();
