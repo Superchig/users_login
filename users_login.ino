@@ -91,9 +91,10 @@ void loop() {
     return;
   }
 
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_BUILTIN, LOW);
+//  digitalWrite(LED_BUILTIN, HIGH);
+//  delay(1000);
+//  digitalWrite(LED_BUILTIN, LOW);
+//  delay(1000);
   if (rfid.uid.uidByte[0] != nuidPICC[0] || 
     rfid.uid.uidByte[1] != nuidPICC[1] || 
     rfid.uid.uidByte[2] != nuidPICC[2] || 
