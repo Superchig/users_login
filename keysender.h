@@ -14,6 +14,7 @@ char sendKeys(byte buf[8], const char* str, int len = 20);
 
 // Sends a keyboard report representing no keys being pressed
 // Should be called after a single key is pressed
+// Code for it taken from example in Arduino RFID library
 void releaseKey(byte buf[8]);
 
 #endif
